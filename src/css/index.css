@@ -1,0 +1,21 @@
+body {
+	background-image:
+		url(../image/background/background1.png),
+		url(../image/background/background2.png);
+	background-position: 0, 1200px;
+	background-repeat: round, no-repeat;
+}
+
+.circleArea {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	border: 1px dashed red;
+}
+
+.mainContainer {
+	display: flex;
+	border: 1px dashed black;
+	height: 920px;
+};
+

@@ -1,34 +1,32 @@
 const labelsData = [{
-  name: 'Лейбл 1',
+  name: 'Google',
   radius: 200,
-  startAngle: Math.PI/8.0,
+  startAngle: Math.PI/10.0,
   endAngle: Math.PI/2.5,
 }, {
-  name: 'Лейбл 2',
+  name: 'Yandex',
   radius: 200,
-  startAngle: Math.PI/2.4,
+  startAngle: Math.PI/2.5,
   endAngle: Math.PI/1.5,
 }, {
-  name: 'Лейбл 3',
+  name: 'Rambler',
   radius: 200,
-  startAngle: Math.PI/1.4,
+  startAngle: Math.PI/1.5,
   endAngle: Math.PI,
-}, 
-{
-  name: 'Лейбл 4',
+}, {
+  name: 'Microsoft',
   radius: 200,
-  startAngle: Math.PI*1.05,
+  startAngle: Math.PI,
   endAngle: Math.PI*1.4,
-},
- {
-  name: 'Лейбл 5',
+}, {
+  name: 'Twitter',
   radius: 200,
-  startAngle: Math.PI*1.42,
+  startAngle: Math.PI*1.4,
   endAngle: Math.PI*1.7,
 }, {
-  name: 'Лейбл 6',
+  name: 'Facebok',
   radius: 200,
-  startAngle: Math.PI*1.75,
+  startAngle: Math.PI*1.7,
   endAngle: Math.PI*2.1,
 }];
 

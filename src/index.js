@@ -1,131 +1,169 @@
+import './css/normalize.css';
+import './css/index.css';
+import './defs.js';
+
 import sectorsData from './sectorsData.js';
-import labelsData from './labelsData.js';
+// import labelsData from './labelsData.js';
+import brands from './brands.js';
 
-const width = 1900;
+const width = 1800;
 const height = 1000;
-const DURATION = 2000;
-
-var state = {
-	selectedSector: null,
-};
+const DURATION = 4000;
 
 /* Зона для размещения графических эллементов */
-const svg = d3.select('body').append('svg').attr('height', height).attr('width', width).attr('id', 'svg');
-const bigCircleArea = svg.append('g').attr('transform', `translate(${width/3.5},${height/2})`);
-const labelCircleArea = svg.append('g').attr('transform', `translate(${width/1.3},${height/1.5})`);
+const svg = d3.select('#svgArea').append('svg').attr('height', height).attr('width', width).attr('id', 'svg');
+const bigCircleArea = svg.append('g').attr('transform', `translate(${width/2.8},${height/2.2})`).attr('id', 'bigCircleArea');
+const brandArea = svg.append('g').attr('transform', `translate(${width/1.3},${height/1.45})`).attr('id', 'brandArea');
 
 const color = d3.scale.category10();
 
-/* Функция генерации круговой диаграммы на основании данных*/
-const pie = d3.layout.pie().value(d => d);
+const arc = d3.svg.arc().padAngle(0.015);
+const brandArc = d3.svg.arc().padAngle(0.05);
 
-/* Группа для одного сектора */
-const bigSectorGroup = bigCircleArea.selectAll('.bigSectorGroup')
-	.data(pie(sectorsData)).enter()
+var pie = d3.layout.pie().value(function(d) {
+	return d.value;
+});
+
+const bigSector = bigCircleArea.selectAll('g')
+	.data(sectorsData)
+	.enter()
 	.append('g')
-	.attr('id', (d, i) => 'bigArc' + i)
-	.attr('class', 'bigSectorGroup');
+	.attr('id', (d, i) => 'bigSector' + i);
 
-/* Наружные большие секторы */
-const arc = d3.svg.arc().outerRadius(d => d.data.radius).innerRadius(0).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-const bigSectorPath = bigSectorGroup.append('path')
-	.attr('d', arc)
-	.attr('id', (d, i) => 'arc' + i)
-	.style('fill', d => color(d.data.browser));
+const outerPath = bigSector.append('g')
+	.style('fill', d => `url(#outerGradient${d.outerGradientId})`)
+	.selectAll("path")
+	.data(d => pie(d.outer)).enter().append('path')
+	.attr("d", function(d, i, j) {
+	return arc.innerRadius(115).outerRadius(d => d.data.radius).startAngle(d.data.startAngle).endAngle(d.data.endAngle)(d)
+}).attr('id', d => 'outerPath' + d.data.id);
 
-/* Внутренние большие секторы*/
-const innerArc = d3.svg.arc().outerRadius(100).innerRadius(50).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-const innerSectorPath = bigSectorGroup.append('path')
-	.attr('d', innerArc)
-	.attr('id', (d, i) => 'innerArc' + i)
-	.style('fill', 'green');
-
-/* Секторы для текста */
-const textArc = d3.svg.arc().outerRadius(d => d.data.radius - 20).innerRadius(150).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-const textSectorPath = bigSectorGroup.append('path')
-	.attr('d', textArc)
-	.attr('id', (d, i) => 'textArc' + i)
-	.style('fill', 'none');
-
- /* Линия для текста */
-bigSectorGroup.append('text')
+bigSector.append('g').selectAll('text')
+	.data(d => pie(d.outer)).enter()
+	.append('text')
 	.append('textPath')
-	.attr('xlink:href', (d, i) => '#textArc' + i)
+	.attr("alignment-baseline", "before-edge")
+	.attr('xlink:href', (d, i) => '#outerPath' + d.data.id)
 	.text(d => d.data.name);
 
-for (let i = 0; i < sectorsData.length; i++) {
-	const sector = d3.selectAll('.bigSectorGroup').filter('#bigArc' + i);
+const ribGroup = bigSector.append('g').style('fill', d => `url(#innerGradient${d.innerGradientId})`);
 
-/* Внутренние малые секторы */
-	const innerSmallArc = d3.svg.arc().outerRadius(200).innerRadius(105).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-	sector.append('g').selectAll('.smallInnerArc')
-	.data(pie(sectorsData[i]['childrens'])).enter()
+const rib = ribGroup.selectAll("g")
+	.data(d => pie(d.childrens))
+	.enter().append("g");
+
+rib.append('path')
+	.attr("d", function(d, i, j) {
+		// console.log(d)
+	return arc.innerRadius(115).outerRadius(d.data.radius).startAngle(d.data.startAngle).endAngle(d.data.endAngle)(d);
+});
+
+const middlePath = bigSector.append('g')
+	.style('fill', d => `url(#innerGradient${d.innerGradientId})`)
+	.selectAll("path")
+	.data(d => pie(d.childrens))
+	.enter().append("path")
+	.attr("d", function(d, i, j) {
+	return arc.innerRadius(85).outerRadius(110).startAngle(d.data.startAngle).endAngle(d.data.endAngle)(d);
+});
+
+const innerGroup = bigSector.append('g')
+	.style('fill', d => `url(#innerGradient${d.innerGradientId})`);
+
+	innerGroup.selectAll("path")
+	.data(d => pie(d.inner))
+	.enter().append("path")
+	.attr("d", function(d, i, j) {
+	return arc.innerRadius(40).outerRadius(80).startAngle(d.data.startAngle).endAngle(d.data.endAngle)(d);
+});
+
+const brandSector = brandArea.selectAll('g')
+	.data(pie(brands))
+	.enter()
 	.append('g')
-	.attr('class', 'smallInnerArc')
-	.append('path')
-	.attr('d', innerSmallArc)
-	.style('fill', 'green');
+	.attr('class', 'brandSector')
+	.style('stroke', d => d.data.borderColor)
+	.style('stroke-width', '3')
+	.style('fill', d => `url(#brandGradient${d.data.gradientId})`)
 
-	/* Продольные секторы */
-	const ribArc = d3.svg.arc().outerRadius(400).innerRadius(205).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-	const ribGroup = sector.append('g').selectAll('.rib')
-	.data(pie(sectorsData[i]['childrens'])).enter()
-	.append('g')
-	.attr('class', 'rib');
+const brandPath = brandSector.append('path')
+	.attr("d", function(d, i, j) {
+	return brandArc.innerRadius(0).outerRadius(200).startAngle(d.data.startAngle).endAngle(d.data.endAngle)(d)
+}).attr('id', (d, i) => 'brandPath' + i)
 
-	ribGroup.append('path')
-	.attr('d', ribArc)
-	.style('fill', 'orange');
+// brandSector.append('svg:image')
+// 	.attr("xlink:href", d => {
+// 		console.log(d)
+// 		return d.data.img
+// 	})
+// 	.attr("height", 150)
+// 	.attr("width", 150)
+// 	.attr('transform', d => 'translate(' + brandArc.centroid(d) + ')');
 
-	ribGroup.append('text')
-	.attr('transform', d => {
-		const angle = (d.data.endAngle + d.data.startAngle) / 2;
-		return 'translate(' + ribArc.centroid(d) + ') rotate(' + (angle * 180 / Math.PI - 90) + ')'
-	})
-	.text(d => d.data.name);
-};
+for (let i = 0; i < brands.length; i++) {
+	const img = document.createElement('img');
+	img.setAttribute('src', brands[i].img);
+	img.setAttribute('title', brands[i].name);
+	// img.addEventListener('click', selectBrand)
+	img.style.borderRadius = '50%';
+	img.style.background = `linear-gradient(${brands[i].gradientDegree}, #${brands[i].colorStart}, #${brands[i].colorEnd})`;
+	img.style.width = '100px';
+	img.style.height = '100px';
+	img.style.margin = '3px';
+	img.style.border = `2px solid #${brands[i].borderColor}`;
+	img.className = 'circleBrand';
 
-/* Остановка анимации мышкой и выбор сектора */
-bigSectorGroup.on('mousedown', function(d) {
-	const select = d3.select(this);
-	state.selectedSector = select[0][0]['id'];
-	d3.selectAll('.bigSectorGroup').interrupt();
-})
+	const root = document.getElementById('circleArea');
+	root.append(img);
+}
 
-/* Остановка анимации пальцем и выбор сектора */
-bigSectorGroup.on('touchstart', function(d) {
-	const select = d3.select(this);
-	state.selectedSector = select[0][0]['id'];
-	d3.selectAll('.bigSectorGroup').interrupt();
-})
-
+var degree = 0;
 function infiniteLoop(g) {
-	console.log(g);
-	g.transition().duration(DURATION).attr('transform', 'rotate(45, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(90, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(135, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(180, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(225, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(270, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(315, 0, 0)')
-	.transition().duration(DURATION).attr('transform', 'rotate(360, 0, 0)')
+	if (g[0][0]['id'] === 'bigSector0') {
+			degree = degree < 360 ? degree + 40 : 45;
+			const selectedSectorId = getMaxRightElement(getHtmlElements(sectorsData));
+
+			d3.selectAll('.brandSector').filter(d => {
+				return d.data.sectorsMatch.find(x => x === selectedSectorId)
+			}).call(selectBrand);
+
+			d3.selectAll('.brandSector').filter(d => {
+				return !d.data.sectorsMatch.find(x => x === selectedSectorId)
+			}).call(removeSelectedBrand);
+		}
+
+	g.transition().duration(DURATION).attr('transform', 'rotate(' + degree + ', 0, 0)')
 	.each('end', function() { d3.select(this).call(infiniteLoop) })
 };
 
-/* Группа для одного сектора брэндов*/
-const labelSectorGroup = labelCircleArea.selectAll('.labelSectorGroup')
-	.data(pie(labelsData)).enter()
-	.append('g')
-	.attr('id', (d, i) => 'labelArc' + i)
-	.attr('class', 'labelSectorGroup');
+function selectBrand(g) {
+	g.transition().duration(500)
+	.attr('transform', d => {
+		const a = (d.data.endAngle + d.data.startAngle) / 2;
+		const dx = 20 * Math.sin(a);
+		const dy = -20 * Math.cos(a);
+		return 'translate(' + dx + ',' + dy + ')';
+	})
+	// g.append('text')
+	// .append('textPath')
+	// .attr('xlink:href', (d, i) => {
+	// 	console.log(d)
+	// 	return '#brandPath' + i
+	// })
+	// .text(d => d.data.money)
+	// .attr('fill', 'black');
+};
 
-/* Все секторы брэндов*/
-const labelArc = d3.svg.arc().outerRadius(d => d.data.radius).innerRadius(0).startAngle(d => d.data.startAngle).endAngle(d => d.data.endAngle);
-const labelSectorPath = labelSectorGroup.append('path')
-	.attr('d', labelArc)
-	.attr('id', (d, i) => 'labelArc' + i)
-	.style('fill', d => color(d.data.browser));
+function removeSelectedBrand(g) {
+	g.transition().duration(200)
+	.attr('transform', 'translate(0, 0)');
 
+	// g.append('text')
+	// .append('textPath')
+	// .attr('xlink:href', (d, i) => '#brandPath' + i)
+	// .text(d => d.data.money)
+	// .attr('fill', 'black');
+};
 
 const getHtmlElements = data => {
 	let arr = [];
@@ -138,100 +176,22 @@ const getHtmlElements = data => {
 }
 
 const getMaxRightElement = elems => {
-	let maxRightSide = 0;
-	let result = null;
+	let maxCoord = 0;
+	let maxTopCoord = 0;
+	let selectedEl = null;
 
 	for (let i = 0; i < elems.length; i++) {
-		if (elems[i].getBoundingClientRect().right > maxRightSide) {
-			maxRightSide = elems[i].getBoundingClientRect().right;
-			result = elems[i];
+		let elementCoord = elems[i].getBoundingClientRect().right + elems[i].getBoundingClientRect().left;
+		let elementTopCoord = elems[i].getBoundingClientRect().top;
+		if (elementCoord > maxCoord) {
+			maxCoord = elementCoord;
+			maxTopCoord = elementTopCoord;
+			selectedEl = elems[i];
 		}
 	};
 
-	// state.selectedSector = result;
-	const selectedNumber = result.id.slice(-1);
-	console.log(selectedNumber);
-	d3.selectAll('.labelSectorGroup').call(removeSelectedBrand);
-	d3.selectAll('.labelSectorGroup').filter('#labelArc' + selectedNumber).call(changeSelectedBrand);
+	return selectedEl.id;
 };
 
-function changeSelectedBrand(g) {
-	g.transition().duration(500)
-	.attr('transform', d => {
-		const a = (d.data.endAngle + d.data.startAngle) / 2;
-		const dx = 20 * Math.sin(a);
-		const dy = -20 * Math.cos(a);
-		return 'translate(' + dx + ',' + dy + ')';
-	})
-};
 
-function removeSelectedBrand(g) {
-	g.transition().duration(300)
-	.attr('transform', 'translate(0, 0)');
-};
-
-/* Запуск движения и вычисления самого правого сектора */
-
-const timer = setInterval(() => {
-	getMaxRightElement(getHtmlElements(sectorsData));
-}, 1000);
-
-bigSectorGroup.call(infiniteLoop)
-
-
-
-
-
-	// var box = elem.getBoundingClientRect();
-	// console.log(box);
-	//   return {
-	//     top: box.top + pageYOffset,
-	//     left: box.left + pageXOffset,
-	//     bottom: box.bottom + pageYOffset,
-	//   };
-
-
-// root.x = d3.selectAll('#bigArc0').attr('cx');
-// root.y = d3.selectAll('#bigArc0').attr('cy');
-// console.log(d3.select('#bigArc0')[0]);
-
-
-// function dragmove(d) {
-// 	const x = d3.event.x;
-// 	const y = d3.event.y;
-// 	console.log("x: " + x, 'y: ' + y);
-// 	const center = {
-// 		x: 0,
-// 		y: 0,
-// 	}
-// 	let degree = Math.atan(x - center.x, y - center.y);
-// 	d3.select(this).attr('transform', 'rotate(' + degree + ')')
-// 	// d3.select(this).attr({
-// 	// 	x: coordinates[0] - 50,
-// 	// 	y: coordinates[1] - 25
-// 	// })
-// }
-
-// const drag = d3.behavior.drag()
-// 	// .on("dragstart", dragstart)
-// 	.on("drag", dragmove)
-// 	// .on("dragend", dragend);
-
-// bigSectorGroup.call(drag)
-
-
-// function dragstart() {
-// 	console.log('dragstart');
-// 	d3.select(this).style("border", '1px solid red');
-// }
-
-
-// function dragend() {
-// 	console.log('dragend');
-// 	d3.select(this).style("border", null);
-// }
-
-// d3.select("svg")
-// 	.append("rect")
-// 	.attr({x: 100, y: 100, width: 100, height: 50})
-// 	.call(drag);
+bigSector.call(infiniteLoop);
